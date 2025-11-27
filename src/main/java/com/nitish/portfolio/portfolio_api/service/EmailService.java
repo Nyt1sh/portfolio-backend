@@ -31,48 +31,50 @@ package com.nitish.portfolio.portfolio_api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
+    private final RestTemplate restTemplate = new RestTemplate();
+
     @Value("${RESEND_API_KEY}")
     private String resendApiKey;
 
-    @Value("${RESEND_FROM_EMAIL}")
-    private String fromEmail;
-
-    private final RestTemplate restTemplate = new RestTemplate();
+    // Hardcoded "from" email allowed by Resend (no domain verification required)
+    private static final String FROM_EMAIL = "onboarding@resend.dev";
 
     @Async
-    public void sendSimpleEmail(String to, String subject, String htmlBody) {
+    public void sendSimpleEmail(String to, String subject, String text) {
         try {
             String url = "https://api.resend.com/emails";
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("from", FROM_EMAIL);
+            body.put("to", List.of(to));
+            body.put("subject", subject);
+            body.put("text", text);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(resendApiKey);
 
-            Map<String, Object> payload = Map.of(
-                    "from", fromEmail,
-                    "to", to,
-                    "subject", subject,
-                    "html", htmlBody
-            );
-
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
             restTemplate.postForEntity(url, request, String.class);
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            System.out.println("📨 Email sent to " + to);
+
+        } catch (Exception e) {
+            System.out.println("❌ Email sending failed: " + e.getMessage());
         }
     }
 }
+
