@@ -117,10 +117,10 @@ import java.util.stream.Collectors;
 public class ContactMessageController {
 
     private final ContactMessageRepository contactMessageRepository;
-    private final EmailOtpRepository emailOtpRepository;
-    private final AdminRepository adminRepository;
-    private final JavaMailSender mailSender;
-    private final EmailService emailService;
+//    private final EmailOtpRepository emailOtpRepository;
+//    private final AdminRepository adminRepository;
+//    private final JavaMailSender mailSender;
+//    private final EmailService emailService;
 
     private ContactMessageDto toDto(ContactMessage m) {
         return ContactMessageDto.builder()
@@ -171,82 +171,83 @@ public class ContactMessageController {
 //        return ResponseEntity.ok(Map.of("status", "otp_sent"));
 //    }
 
+//uncomment me start
+//
+//@PostMapping("/contact/request-otp")
+//public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> body) {
+//    String email = body.get("email");
+//    if (email == null || email.isBlank()) {
+//        return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+//    }
+//
+//    // 🔐 Simple rate limit by email: 1 OTP per 60 seconds
+//    EmailOtp lastOtp = emailOtpRepository.findTopByEmailOrderByCreatedAtDesc(email)
+//            .orElse(null);
+//    if (lastOtp != null) {
+//        long secondsSinceLast = java.time.Duration.between(
+//                lastOtp.getCreatedAt(), LocalDateTime.now()
+//        ).getSeconds();
+//        if (secondsSinceLast < 60) {
+//            return ResponseEntity.status(429)
+//                    .body(Map.of("error", "OTP already sent recently. Please wait a bit before trying again."));
+//        }
+//    }
+//
+//    String otp = String.format("%06d", new Random().nextInt(1_000_000));
+//
+//    EmailOtp entity = EmailOtp.builder()
+//            .email(email)
+//            .otp(otp)
+//            .createdAt(LocalDateTime.now())
+//            .used(false)
+//            .build();
+//    emailOtpRepository.save(entity);
+//
+//    String text =
+//            "Hello,\n\n"
+//                    + "To continue, please enter the verification code below:\n\n"
+//                    + "Code: " + otp + "\n"
+//                    + "Valid for: 10 minutes\n\n"
+//                    + "Sorry for the extra step — this helps keep your request secure.\n\n"
+//                    + "Kind regards,\n"
+//                    + "Nitish's Portfolio";
+//
+//    emailService.sendSimpleEmail(email, "Your verification code", text);
+//
+//    return ResponseEntity.ok(Map.of("status", "otp_sent"));
+//}
+//
+//
+//    // ---------- 2) Verify OTP (returns JSON) ----------
+//    @PostMapping("/contact/verify-otp")
+//    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
+//        String email = body.get("email");
+//        String otp = body.get("otp");
+//
+//        if (email == null || otp == null) {
+//            return ResponseEntity.badRequest().body(Map.of("error", "Email and OTP are required"));
+//        }
+//
+//        return emailOtpRepository.findTopByEmailOrderByCreatedAtDesc(email)
+//                .map(stored -> {
+//                    if (stored.isUsed()) {
+//                        return ResponseEntity.status(400).body(Map.of("error", "OTP already used"));
+//                    }
+//                    if (!stored.getOtp().equals(otp)) {
+//                        return ResponseEntity.status(400).body(Map.of("error", "Invalid OTP"));
+//                    }
+//                    if (Duration.between(stored.getCreatedAt(), LocalDateTime.now()).toMinutes() > 10) {
+//                        return ResponseEntity.status(400).body(Map.of("error", "OTP expired"));
+//                    }
+//
+//                    stored.setUsed(true);
+//                    emailOtpRepository.save(stored);
+//                    return ResponseEntity.ok(Map.of("status", "ok"));
+//                })
+//                .orElseGet(() -> ResponseEntity.status(400).body(Map.of("error", "OTP not found")));
+//    }
 
-@PostMapping("/contact/request-otp")
-public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> body) {
-    String email = body.get("email");
-    if (email == null || email.isBlank()) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
-    }
-
-    // 🔐 Simple rate limit by email: 1 OTP per 60 seconds
-    EmailOtp lastOtp = emailOtpRepository.findTopByEmailOrderByCreatedAtDesc(email)
-            .orElse(null);
-    if (lastOtp != null) {
-        long secondsSinceLast = java.time.Duration.between(
-                lastOtp.getCreatedAt(), LocalDateTime.now()
-        ).getSeconds();
-        if (secondsSinceLast < 60) {
-            return ResponseEntity.status(429)
-                    .body(Map.of("error", "OTP already sent recently. Please wait a bit before trying again."));
-        }
-    }
-
-    String otp = String.format("%06d", new Random().nextInt(1_000_000));
-
-    EmailOtp entity = EmailOtp.builder()
-            .email(email)
-            .otp(otp)
-            .createdAt(LocalDateTime.now())
-            .used(false)
-            .build();
-    emailOtpRepository.save(entity);
-
-    String text =
-            "Hello,\n\n"
-                    + "To continue, please enter the verification code below:\n\n"
-                    + "Code: " + otp + "\n"
-                    + "Valid for: 10 minutes\n\n"
-                    + "Sorry for the extra step — this helps keep your request secure.\n\n"
-                    + "Kind regards,\n"
-                    + "Nitish's Portfolio";
-
-    emailService.sendSimpleEmail(email, "Your verification code", text);
-
-    return ResponseEntity.ok(Map.of("status", "otp_sent"));
-}
-
-
-    // ---------- 2) Verify OTP (returns JSON) ----------
-    @PostMapping("/contact/verify-otp")
-    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String otp = body.get("otp");
-
-        if (email == null || otp == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Email and OTP are required"));
-        }
-
-        return emailOtpRepository.findTopByEmailOrderByCreatedAtDesc(email)
-                .map(stored -> {
-                    if (stored.isUsed()) {
-                        return ResponseEntity.status(400).body(Map.of("error", "OTP already used"));
-                    }
-                    if (!stored.getOtp().equals(otp)) {
-                        return ResponseEntity.status(400).body(Map.of("error", "Invalid OTP"));
-                    }
-                    if (Duration.between(stored.getCreatedAt(), LocalDateTime.now()).toMinutes() > 10) {
-                        return ResponseEntity.status(400).body(Map.of("error", "OTP expired"));
-                    }
-
-                    stored.setUsed(true);
-                    emailOtpRepository.save(stored);
-                    return ResponseEntity.ok(Map.of("status", "ok"));
-                })
-                .orElseGet(() -> ResponseEntity.status(400).body(Map.of("error", "OTP not found")));
-    }
-
-
+//uncomment me end
     // ---------- 3) Submit message (called only after OTP verified on frontend) ----------
     @PostMapping("/contact")
     public ResponseEntity<ContactMessageDto> submitMessage(@RequestBody ContactMessageDto req) {
@@ -263,24 +264,26 @@ public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> body) {
         ContactMessage saved = contactMessageRepository.save(m);
 
         // Send admin notification if enabled
-        adminRepository.findByUsername("admin").ifPresent(admin -> {
-            Boolean enabled = admin.getNotificationsEnabled();
-            if (Boolean.TRUE.equals(enabled)) {
-                String adminEmail = admin.getNotificationEmail();
-                // inside adminRepository.findByUsername("admin").ifPresent(admin -> { ... })
-                if (adminEmail != null && !adminEmail.isBlank()) {
-                    String messageBody = "New message from: " + saved.getName() + "\n" +
-                            "Email: " + saved.getEmail() + "\n" +
-                            "Phone: " + (saved.getPhone() == null ? "-" : saved.getPhone()) + "\n" +
-                            "Subject: " + (saved.getSubject() == null ? "-" : saved.getSubject()) + "\n\n" +
-                            "Message:\n" + saved.getMessage();
-
-                    // send async (use EmailService)
-                    emailService.sendSimpleEmail(adminEmail, "New portfolio contact message", messageBody);
-                }
-
-            }
-        });
+        //uncomment me start
+//        adminRepository.findByUsername("admin").ifPresent(admin -> {
+//            Boolean enabled = admin.getNotificationsEnabled();
+//            if (Boolean.TRUE.equals(enabled)) {
+//                String adminEmail = admin.getNotificationEmail();
+//                // inside adminRepository.findByUsername("admin").ifPresent(admin -> { ... })
+//                if (adminEmail != null && !adminEmail.isBlank()) {
+//                    String messageBody = "New message from: " + saved.getName() + "\n" +
+//                            "Email: " + saved.getEmail() + "\n" +
+//                            "Phone: " + (saved.getPhone() == null ? "-" : saved.getPhone()) + "\n" +
+//                            "Subject: " + (saved.getSubject() == null ? "-" : saved.getSubject()) + "\n\n" +
+//                            "Message:\n" + saved.getMessage();
+//
+//                    // send async (use EmailService)
+//                    emailService.sendSimpleEmail(adminEmail, "New portfolio contact message", messageBody);
+//                }
+//
+//            }
+//        });
+        //uncomment me end
 
         return ResponseEntity.ok(toDto(saved));
     }
